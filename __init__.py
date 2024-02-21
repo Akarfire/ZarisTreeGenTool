@@ -28,17 +28,6 @@ import os
 from . Panels import ZarisTreeGen_PT_Panel
 from . Operators import ZarisTreeGen_OT_CreateTreeBase
 from . Operators import ZarisTreeGen_OT_CreateLeavesBase
-# from bpy.utils import resource_path
-# from pathlib import Path
-
-
-# filepath = os.path.join(os.path.dirname(
-# os.path.abspath(__file__)), self.blend + ".blend")
-        
-# with bpy.data.libraries.load(filepath, link=False) as (data_from, data_to):
-#     data_to.node_groups = [
-#         name for name in data_from.node_groups]
-
 
 Classes = (ZarisTreeGen_PT_Panel, ZarisTreeGen_OT_CreateTreeBase, ZarisTreeGen_OT_CreateLeavesBase)
 
@@ -49,3 +38,20 @@ def register():
 def unregister():
     for c in Classes:
         bpy.utils.unregister_class(c)
+
+
+CurrentDir = os.path.dirname(os.path.abspath(__file__))
+
+blendfile = CurrentDir + '/ZarisTreeGenTool_Assets.blend'
+section   = 'NodeTree'
+object    = 'Zaris_LeavesGenerator'
+
+
+blendfile = 'D:/3D_Models/Blender/Scripts/ZarisTreeGenTool/ZarisTreeGenTool_Assets.blend'
+# Filepath  = blendfile + section + object
+# Directory = blendfile + section
+# Filename  = object
+
+bpy.ops.wm.append(filepath=os.path.join(blendfile, section, object),
+                  directory=os.path.join(blendfile, section),
+                  filename=object)
