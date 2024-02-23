@@ -1,6 +1,26 @@
 import bpy
+import os
 
 from bpy.types import Operator
+
+    
+def AppendAssets():
+
+    CurrentDir = os.path.dirname(os.path.abspath(__file__))
+
+    blendfile = CurrentDir + '/ZarisTreeGenTool_Assets.blend'
+
+    GeometryNodes = ["Zaris_LeavesGenerator"]
+
+    for GN in GeometryNodes:
+        if not GN in bpy.data.node_groups :
+            section   = 'NodeTree'
+            object    = GN
+
+            bpy.ops.wm.append(filepath=os.path.join(blendfile, section, object),
+                            directory=os.path.join(blendfile, section),
+                            filename=object)
+    
 
 
 class ZarisTreeGen_OT_CreateTreeBase(Operator):
@@ -16,6 +36,10 @@ class ZarisTreeGen_OT_CreateTreeBase(Operator):
         return context.active_object.mode == "OBJECT"
 
     def execute(self, context):
+
+        # Check and append all necessary Assets before doing anything
+        AppendAssets()
+
         # Parameteres
         DefaultTreeGenHeight = 2
 
@@ -61,13 +85,16 @@ class ZarisTreeGen_OT_CreateLeavesBase(Operator):
 
     def execute(self, context):
 
+        # Check and append all necessary Assets before doing anything
+        AppendAssets()
+
         bpy.ops.mesh.primitive_ico_sphere_add(enter_editmode=False, align='WORLD', location=(0, 0, 0), scale=(1, 1, 1))
         CurrentObject = bpy.context.active_object
         CurrentObject.name = "TreeLeaves"
 
-        # modifier = CurrentObject.modifiers.new("Leaves Generator", "NODES")
-        # ZarisLeavesGenerator = bpy.data.node_groups["ZarisLeavesGenerator"]
-        # modifier.node_group = ZarisLeavesGenerator
+        modifier = CurrentObject.modifiers.new("Leaves Generator", "NODES")
+        ZarisLeavesGenerator = bpy.data.node_groups["Zaris_LeavesGenerator"]
+        modifier.node_group = ZarisLeavesGenerator
 
 
         return {'FINISHED'}

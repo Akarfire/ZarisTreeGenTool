@@ -15,4 +15,5 @@ class ZarisTreeGen_PT_Panel (Panel):
         Column = Row.column()
         Column.operator("object.create_tree_base", text="Add Tree Base")
         Column.operator("object.create_leaves_base", text="Add Leaves Base")
+        Column.operator("object.append_assets", text="Append Assets")
 
