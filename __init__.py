@@ -27,8 +27,9 @@ import bpy
 from . Panels import ZarisTreeGen_PT_Panel
 from . Operators import ZarisTreeGen_OT_CreateTreeBase
 from . Operators import ZarisTreeGen_OT_CreateLeavesBase
+from . Operators import ZarisTreeGen_OT_GenerateLODs
 
-Classes = (ZarisTreeGen_PT_Panel, ZarisTreeGen_OT_CreateTreeBase, ZarisTreeGen_OT_CreateLeavesBase)
+Classes = (ZarisTreeGen_PT_Panel, ZarisTreeGen_OT_CreateTreeBase, ZarisTreeGen_OT_CreateLeavesBase, ZarisTreeGen_OT_GenerateLODs)
 
 def register():
     for c in Classes:

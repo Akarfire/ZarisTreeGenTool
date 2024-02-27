@@ -3,14 +3,17 @@ import os
 
 from bpy.types import Operator
 
-    
+
+# Functions
+
+# Checks for and appends all necessary assets to the file
 def AppendAssets():
 
     CurrentDir = os.path.dirname(os.path.abspath(__file__))
 
     blendfile = CurrentDir + '/ZarisTreeGenTool_Assets.blend'
 
-    GeometryNodes = ["Zaris_LeavesGenerator"]
+    GeometryNodes = ["Zaris_LeavesGenerator", "Zaris_Tree_LOD_Gen"]
 
     for GN in GeometryNodes:
         if not GN in bpy.data.node_groups :
@@ -22,6 +25,8 @@ def AppendAssets():
                             filename=object)
     
 
+
+# Actual Operators
 
 class ZarisTreeGen_OT_CreateTreeBase(Operator):
     bl_idname = "object.create_tree_base"
@@ -92,12 +97,75 @@ class ZarisTreeGen_OT_CreateLeavesBase(Operator):
         CurrentObject = bpy.context.active_object
         CurrentObject.name = "TreeLeaves"
 
-        modifier = CurrentObject.modifiers.new("Leaves Generator", "NODES")
+        Modifier = CurrentObject.modifiers.new("Leaves Generator", "NODES")
         ZarisLeavesGenerator = bpy.data.node_groups["Zaris_LeavesGenerator"]
-        modifier.node_group = ZarisLeavesGenerator
-
+        Modifier.node_group = ZarisLeavesGenerator
 
         return {'FINISHED'}
     
 
 
+class ZarisTreeGen_OT_GenerateLODs(Operator):
+    bl_idname = "object.generate_lods"
+    bl_label = "Generate LODs"
+    bl_description = "Generates LOD meshes for Zaris tree generation pipeline"
+
+    @classmethod
+    def poll(self, context):
+        if context.active_object != None:
+
+            FoundTrunkVG = False
+            FoundCrownVG = False
+
+            for vg in context.active_object.vertex_groups:
+                FoundTrunkVG = FoundTrunkVG or vg.name == "Trunk"
+                FoundCrownVG = FoundCrownVG or vg.name == "Crown"
+
+                if FoundTrunkVG and FoundCrownVG: break
+
+            return FoundTrunkVG and FoundCrownVG
+        
+        return False
+    
+
+    def execute(self, context):
+
+        AppendAssets()
+
+        LOD_Number = 4
+        LOD_Spacing = 6
+
+        TargetObject = context.active_object
+        bpy.data.objects[TargetObject.name].select_set(True)
+
+        bpy.ops.object.duplicate()
+        bpy.ops.transform.translate(value=(LOD_Spacing, 0, 0))
+        LOD_0 = bpy.context.active_object
+        LOD_0.name = TargetObject.name + "_LOD_0"
+
+        for m in LOD_0.modifiers:
+            bpy.ops.object.modifier_apply(modifier= m.name)
+
+        for i in range(LOD_Number):
+            bpy.ops.object.duplicate()
+
+            LOD_Object = bpy.context.active_object
+            bpy.ops.transform.translate(value=(LOD_Spacing, 0, 0))
+            LOD_Object.name = TargetObject.name + "_LOD_" + str(i + 1)
+
+            LOD_Object.modifiers.clear()
+            Modifier = LOD_Object.modifiers.new("LOD Generator", "NODES")
+            Zaris_Tree_LOD_Gen = bpy.data.node_groups["Zaris_Tree_LOD_Gen"]
+            Modifier.node_group = Zaris_Tree_LOD_Gen
+
+            bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name="Socket_2", modifier_name="LOD Generator")
+            bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name="Socket_5", modifier_name="LOD Generator")
+            LOD_Object.modifiers["LOD Generator"]["Socket_2_attribute_name"] = "Crown"   
+            LOD_Object.modifiers["LOD Generator"]["Socket_5_attribute_name"] = "Trunk"
+
+            LOD_Object.modifiers["LOD Generator"]["Socket_3"] = 1 / (1.25 * (i + 1))
+         
+
+
+        return {'FINISHED'}
+    
