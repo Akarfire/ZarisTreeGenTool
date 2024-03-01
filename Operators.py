@@ -128,6 +128,68 @@ class ZarisTreeGen_OT_GenerateLODs(Operator):
         return False
     
 
+    def AddLOD(self, OriginalName, LOD_ID, Spacing):
+
+        Modded = False
+        PreviousObject = None
+
+        if OriginalName + "_LOD_" + str(LOD_ID) in bpy.data.objects:   
+            bpy.ops.object.select_all(action='DESELECT')
+            PreviousObject = bpy.data.objects[OriginalName + "_LOD_" + str(LOD_ID)]
+            PreviousObject.select_set(True)
+            PreviousObject.name = PreviousObject.name + "_temp"
+            Modded = True
+
+        TargetObjectName = OriginalName + "_LOD_" + str(LOD_ID - 1)
+        if LOD_ID == 0:
+            TargetObjectName = OriginalName
+
+
+        bpy.ops.object.select_all(action='DESELECT')
+        bpy.data.objects[TargetObjectName].select_set(True)
+        
+        bpy.ops.object.duplicate()
+        bpy.ops.transform.translate(value=(Spacing, 0, 0))
+
+        LOD = bpy.context.active_object
+        LOD.name = OriginalName + "_LOD_" + str(LOD_ID)
+        LOD.modifiers.clear()
+
+        if PreviousObject != None:
+            for mSrc in PreviousObject.modifiers:
+                mDst = LOD.modifiers.get(mSrc.name, None)
+                if not mDst:
+                    mDst = LOD.modifiers.new(mSrc.name, mSrc.type)
+
+                # collect names of writable properties
+                properties = [p.identifier for p in mSrc.bl_rna.properties if not p.is_readonly]
+
+                # copy those properties
+                for prop in properties:
+                    setattr(mDst, prop, getattr(mSrc, prop))
+
+                if mSrc.type == "NODES":
+                    for s in range(1, 100):
+                        if ("Socket_" + str(s)) in LOD.modifiers[mSrc.name]:
+                            LOD.modifiers[mSrc.name]["Socket_" + str(s)] = PreviousObject.modifiers[str(mSrc.name)]["Socket_" + str(s)]
+
+                        if ("Socket_" + str(s) + '_attribute_name') in LOD.modifiers[mSrc.name]:
+                            LOD.modifiers[mSrc.name]["Socket_" + str(s) + '_attribute_name'] = PreviousObject.modifiers[str(mSrc.name)]["Socket_" + str(s) + '_attribute_name']
+
+                        if ("Socket_" + str(s) + '_use_attribute') in LOD.modifiers[mSrc.name]:
+                            LOD.modifiers[mSrc.name]["Socket_" + str(s) + '_use_attribute'] = PreviousObject.modifiers[str(mSrc.name)]["Socket_" + str(s) + '_use_attribute']
+
+
+        if OriginalName + "_LOD_" + str(LOD_ID) + "_temp" in bpy.data.objects:
+            bpy.ops.object.select_all(action='DESELECT')  
+            bpy.data.objects[OriginalName + "_LOD_" + str(LOD_ID) + "_temp"].select_set(True)
+            bpy.ops.object.delete()
+
+        return LOD, Modded
+
+
+
+
     def execute(self, context):
 
         AppendAssets()
@@ -136,35 +198,34 @@ class ZarisTreeGen_OT_GenerateLODs(Operator):
         LOD_Spacing = 6
 
         TargetObject = context.active_object
+        OriginalName = TargetObject.name
         bpy.data.objects[TargetObject.name].select_set(True)
 
-        bpy.ops.object.duplicate()
-        bpy.ops.transform.translate(value=(LOD_Spacing, 0, 0))
-        LOD_0 = bpy.context.active_object
-        LOD_0.name = TargetObject.name + "_LOD_0"
+        LOD_0, LOD_0_Modded = self.AddLOD(OriginalName, 0, LOD_Spacing)
 
         for m in LOD_0.modifiers:
             bpy.ops.object.modifier_apply(modifier= m.name)
-
+        
         for i in range(LOD_Number):
-            bpy.ops.object.duplicate()
 
-            LOD_Object = bpy.context.active_object
-            bpy.ops.transform.translate(value=(LOD_Spacing, 0, 0))
-            LOD_Object.name = TargetObject.name + "_LOD_" + str(i + 1)
+            LOD_Object, Modded = self.AddLOD(OriginalName, i + 1, LOD_Spacing)
 
-            LOD_Object.modifiers.clear()
-            Modifier = LOD_Object.modifiers.new("LOD Generator", "NODES")
-            Zaris_Tree_LOD_Gen = bpy.data.node_groups["Zaris_Tree_LOD_Gen"]
-            Modifier.node_group = Zaris_Tree_LOD_Gen
+            if not Modded:
 
-            bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name="Socket_2", modifier_name="LOD Generator")
-            bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name="Socket_5", modifier_name="LOD Generator")
-            LOD_Object.modifiers["LOD Generator"]["Socket_2_attribute_name"] = "Crown"   
-            LOD_Object.modifiers["LOD Generator"]["Socket_5_attribute_name"] = "Trunk"
+                LOD_Object.modifiers.clear()
+                Modifier = LOD_Object.modifiers.new("LOD Generator", "NODES")
+                Zaris_Tree_LOD_Gen = bpy.data.node_groups["Zaris_Tree_LOD_Gen"]
+                Modifier.node_group = Zaris_Tree_LOD_Gen
 
-            LOD_Object.modifiers["LOD Generator"]["Socket_3"] = 1 / (1.25 * (i + 1))
-         
+                bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name="Socket_2", modifier_name="LOD Generator")
+                bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name="Socket_5", modifier_name="LOD Generator")
+                LOD_Object.modifiers["LOD Generator"]["Socket_2_attribute_name"] = "Crown"   
+                LOD_Object.modifiers["LOD Generator"]["Socket_5_attribute_name"] = "Trunk"
+
+
+                LOD_Object.modifiers["LOD Generator"]["Socket_3"] = 1 / (1.25 * (i + 1))
+
+            LOD_Object.data.update()
 
 
         return {'FINISHED'}
