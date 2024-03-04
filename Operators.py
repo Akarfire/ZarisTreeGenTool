@@ -76,6 +76,25 @@ class ZarisTreeGen_OT_CreateTreeBase(Operator):
 
 
 
+
+class ZarisTreeGen_OT_AddTrunkGeometry(Operator):
+    bl_idname = "object.add_trunk_geometry"
+    bl_label = "Add Trunk Geometry"
+    bl_description = "Adds all of the necessary modifiers to create trunk geometry"
+
+    @classmethod
+    def poll(cls, context):
+        if context.active_object == None:
+            return True
+        
+        return context.active_object.mode == "OBJECT"
+
+    def execute(self, context):
+
+        return {'FINISHED'}
+    
+
+
 class ZarisTreeGen_OT_CreateLeavesBase(Operator):
     bl_idname = "object.create_leaves_base"
     bl_label = "Create Leaves Base"
@@ -102,7 +121,43 @@ class ZarisTreeGen_OT_CreateLeavesBase(Operator):
         Modifier.node_group = ZarisLeavesGenerator
 
         return {'FINISHED'}
-    
+
+
+
+class ZarisTreeGen_OT_LeavesShading(Operator):
+    bl_idname = "object.leaves_shading"
+    bl_label = "Set Up Leaves Shading"
+    bl_description = "Sets up everything needed to smooth shade the leaves"
+
+    @classmethod
+    def poll(cls, context):
+        if context.active_object == None:
+            return True
+        
+        return context.active_object.mode == "OBJECT"
+
+    def execute(self, context):
+
+        return {'FINISHED'}
+
+
+
+class ZarisTreeGen_OT_PackTree(Operator):
+    bl_idname = "object.pack_tree"
+    bl_label = "Pack Tree"
+    bl_description = "Combines all of the tree meshes into a single tree mesh"
+
+    @classmethod
+    def poll(cls, context):
+        if context.active_object == None:
+            return True
+        
+        return context.active_object.mode == "OBJECT"
+
+    def execute(self, context):
+
+        return {'FINISHED'}
+
 
 
 class ZarisTreeGen_OT_GenerateLODs(Operator):
@@ -181,7 +236,7 @@ class ZarisTreeGen_OT_GenerateLODs(Operator):
 
 
         if OriginalName + "_LOD_" + str(LOD_ID) + "_temp" in bpy.data.objects:
-            bpy.ops.object.select_all(action='DESELECT')  
+            bpy.ops.object.select_all(action='DESELECT')
             bpy.data.objects[OriginalName + "_LOD_" + str(LOD_ID) + "_temp"].select_set(True)
             bpy.ops.object.delete()
 
@@ -230,3 +285,38 @@ class ZarisTreeGen_OT_GenerateLODs(Operator):
 
         return {'FINISHED'}
     
+
+
+class ZarisTreeGen_OT_PackLODs(Operator):
+    bl_idname = "object.pack_lods"
+    bl_label = "Pack LODs"
+    bl_description = "Prepares tree LODs for export"
+
+    @classmethod
+    def poll(cls, context):
+        if context.active_object == None:
+            return True
+        
+        return context.active_object.mode == "OBJECT"
+
+    def execute(self, context):
+
+        return {'FINISHED'}
+    
+
+
+class ZarisTreeGen_OT_UnpackLODs(Operator):
+    bl_idname = "object.unpack_lods"
+    bl_label = "Unpack LODs"
+    bl_description = "Reverts tree LOD export preparations"
+
+    @classmethod
+    def poll(cls, context):
+        if context.active_object == None:
+            return True
+        
+        return context.active_object.mode == "OBJECT"
+
+    def execute(self, context):
+
+        return {'FINISHED'}
